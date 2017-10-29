@@ -5,6 +5,7 @@ using UnityEngine;
 using System.IO;
 using CreatureGenerate;
 using UnityEngine.SceneManagement; // コレ重要
+using System.Text;
 
 namespace ExtraEditMod
 {
@@ -100,6 +101,12 @@ namespace ExtraEditMod
         /// </summary>
         string modBootSceneName = "";
 
+        /// <summary>
+        /// ログを表示する
+        /// </summary>
+        public static string m_debuglog = "";
+
+
         #endregion
 
         #region  UIの基本値定数
@@ -121,7 +128,7 @@ namespace ExtraEditMod
         public const int BUTTON_X = IMAGE_X + IMAGE_SIZE + 10;
         public const int BUTTON_WIDTH = 200;
         public const int BUTTON_HEIGHT_INTARVAL = 70;
-
+        public const int UI_MARGIN = 20;
         #endregion
 
         /// <summary>
@@ -162,6 +169,11 @@ namespace ExtraEditMod
                 _instance.currentSceneName = SceneManager.GetActiveScene().name;
 
 
+                //modデバッグ用
+                //TextAsset textAsset = Resources.Load<TextAsset>("xml/CreatureGenInfo");
+                //m_debuglog += textAsset.text;
+                //m_debuglog += _instance.CreatureIdAndNameList();
+
             }
         }
 
@@ -190,6 +202,23 @@ namespace ExtraEditMod
         }
 
         /// <summary>
+        /// ID一覧を取得
+        /// </summary>
+        /// <returns></returns>
+        public string CreatureIdAndNameList()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var metaID in CreatureGenerateInfo.all)
+            {
+                var typeInfo = CreatureTypeList.instance.GetData(metaID);
+                string list = "ID:" + metaID + " code:" + typeInfo.codeId + " name:" + typeInfo.name + "\n";
+                sb.Append(list);
+            }
+            return sb.ToString();
+        }
+
+
+        /// <summary>
         /// 文字列描画
         /// </summary>
         void OnGUI()
@@ -201,6 +230,9 @@ namespace ExtraEditMod
             {
                 SubGUI();
             }
+
+            //modデバッグ用
+            //GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
         }
 
         /// <summary>
@@ -220,15 +252,14 @@ namespace ExtraEditMod
             m_creatureName.Add(0, "Random");
         }
 
-
         /// <summary>
         /// クリーチャーをセットする
         /// </summary>
         /// <param name="day"></param>
         /// <param name="cgm"></param>
-        public static void SetCreature(int day, object cgm)
+        public static void SetCreature(object cgm)
         {
-            _instance.m_orderCreature.SetCreature(day, cgm);
+            _instance.m_orderCreature.SetCreature(cgm);
         }
 
         /// <summary>
@@ -313,7 +344,7 @@ namespace ExtraEditMod
         {
             var x = Screen.width - (BOX_X + BOX_WIDTH);
             var y = BOX_Y + BOX_HEIGHT;
-            GUI.Box(new Rect(x, y, BOX_WIDTH, BOX_HEIGHT), string.Format("Day {0}:ChoiceAbnormality", m_choiceDay));
+            GUI.Box(new Rect(x, y, BOX_WIDTH, BOX_HEIGHT), string.Format("Day {0}:ChoiceAbnormality count:{1}", m_choiceDay, m_selectAbnormalityList.Count));
 
 
             x += ADD_CONTENT_X;
@@ -327,15 +358,20 @@ namespace ExtraEditMod
             //スクロールビュー配置
             subScrollViewVector = GUI.BeginScrollView(scrollViewRect, subScrollViewVector, scrollViewAbnormalityListRect);
 
-            y += BUTTON_HEIGHT_INTARVAL * 4 + 10 + UI_BETWEEN_HEIGHT * 2;
+            y += BUTTON_HEIGHT_INTARVAL * 4 + UI_MARGIN + UI_BETWEEN_HEIGHT * 2;
 
-            for (int i = 0; i < m_selectAbnormalityList.Count; i++)
+            int contensCount = 0;
+            for (int i = -1; i < m_selectAbnormalityList.Count; i++)
             {
-                var id = m_selectAbnormalityList[i];
-                GUI.DrawTexture(new Rect(IMAGE_X, (i * BUTTON_HEIGHT_INTARVAL), IMAGE_SIZE, IMAGE_SIZE), m_creatureSprite[id].texture);
+                var id = 0L;
+                if (-1 < i)
+                {
+                    id = m_selectAbnormalityList[i];
+                }
+                GUI.DrawTexture(new Rect(IMAGE_X, (contensCount * BUTTON_HEIGHT_INTARVAL), IMAGE_SIZE, IMAGE_SIZE), m_creatureSprite[id].texture);
                 var creatureCode = m_creatureName[id];
                 string label = string.Format("{0}", creatureCode);
-                if (GUI.Button(new Rect(BUTTON_X, (i * BUTTON_HEIGHT_INTARVAL), BUTTON_WIDTH, IMAGE_SIZE), label))
+                if (GUI.Button(new Rect(BUTTON_X, (contensCount * BUTTON_HEIGHT_INTARVAL), BUTTON_WIDTH, IMAGE_SIZE), label))
                 {
                     var list = m_orderCreature.m_creatureOlderDic[m_choiceKeyValue];
                     list[m_choiceIndex] = id;
@@ -346,6 +382,7 @@ namespace ExtraEditMod
                     }
                     m_editSetting.SaveSettings(AddLob.enableAddLob, m_orderCreature);
                 }
+                contensCount++;
             }
             GUI.EndScrollView();
         }

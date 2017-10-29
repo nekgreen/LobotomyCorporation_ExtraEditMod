@@ -6,7 +6,7 @@ namespace ExtraEditMod
 {
     public class OrderCreature
     {
-        public static int DAY_COUNT = 20;
+        public static int DAY_COUNT = 35;
 
         /// <summary>
         /// クリーチャーを選択できるか?
@@ -47,18 +47,10 @@ namespace ExtraEditMod
                 {
                     foreach (var id in kv.Value)
                     {
-                        for (int i = 0; i < list.Count; i++)
-                        {
-                            if (list[i] == id && id != 0)
-                            {
-                                list.RemoveAt(i);
-                                break;
-                            }
-                        }
+                        list.Remove(id);
                     }
                 }
             }
-
             return list;
         }
 
@@ -166,20 +158,38 @@ namespace ExtraEditMod
         /// </summary>
         /// <param name="day"></param>
         /// <param name="cgm"></param>
-        public void SetCreature(int day, object obj)
+        public void SetCreature(object obj)
         {
             CreatureGenerateModel cgm = obj as CreatureGenerateModel;
+            SetCreature(cgm.day, cgm);
+        }
+
+        /// <summary>
+        /// クリーチャーをセットする
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="cgm"></param>
+        public void SetCreature(int day, CreatureGenerateModel cgm)
+        {
+            ExtraEditMod.m_debuglog = "SetCreature";
             var sefiraEnum = m_dayToSefiraEnumDic[day];
             KeyValuePair<SefiraEnum, int> kv = new KeyValuePair<SefiraEnum, int>(sefiraEnum, day%5+1);
             if (m_creatureOlderDic.ContainsKey(kv))
             {
-                var id = m_creatureOlderDic[kv][0];
-                if (id != 0)
+                
+                bool result = false;
+                foreach (var id in m_creatureOlderDic[kv])
                 {
-                    cgm.creature.Add(id);
-                    return;
+                    if (id != 0)
+                    {
+                        cgm.creature.Add(id);
+                        ExtraEditMod.m_debuglog += "\n id"+ id;
+                        result = true;
+                    }
                 }
+                if (result) return;
             }
+            ExtraEditMod.m_debuglog += "\n use Default";
             SetCreatureDefault(day, cgm);
         }
 
@@ -210,9 +220,9 @@ namespace ExtraEditMod
             {
                 cgm.door3.commonAction.Exectue();
             }
-            cgm.door1.SetCreature(day);
-            cgm.door2.SetCreature(day);
-            cgm.door3.SetCreature(day);
+            cgm.door1.SetCreature();
+            cgm.door2.SetCreature();
+            cgm.door3.SetCreature();
             if (cgm.door1.Creature != (long)-1)
             {
                 cgm.creature.Add(cgm.door1.Creature);

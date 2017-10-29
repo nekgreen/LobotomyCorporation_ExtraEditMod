@@ -81,7 +81,7 @@ namespace ILModWriter
             string search = @"// end of method CreatureGenerateModel::SetCreature";
             int baseIndex = IndexOfForList(0, search, list);
             int minus = -1;
-            while (list[baseIndex + minus].IndexOf(@"SetCreature(int32 day) cil managed") < 0)
+            while (list[baseIndex + minus].IndexOf(@"SetCreature() cil managed") < 0)
             {
                 --minus;
             }
@@ -91,10 +91,9 @@ namespace ILModWriter
                 list.RemoveAt(baseIndex + 2);
             }
 
-            list.Insert(baseIndex + 2, @"    IL_0000:  ldarg.1");
-            list.Insert(baseIndex + 3, @"    IL_0001:  ldarg.0");
-            list.Insert(baseIndex + 4, @"    IL_0002:  call       void [ExtraEditMod]ExtraEditMod.ExtraEditMod::SetCreature(int32, object)");
-            list.Insert(baseIndex + 5, @"    IL_0007:  ret");
+            list.Insert(baseIndex + 2, @"    IL_0000:  ldarg.0");
+            list.Insert(baseIndex + 3, @"    IL_0001:  call       void [ExtraEditMod]ExtraEditMod.ExtraEditMod::SetCreature(object)");
+            list.Insert(baseIndex + 4, @"    IL_0006:  ret");
         }
 
 
