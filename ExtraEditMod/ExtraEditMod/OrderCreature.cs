@@ -172,6 +172,14 @@ namespace ExtraEditMod
         public void SetCreature(int day, CreatureGenerateModel cgm)
         {
             ExtraEditMod.m_debuglog = "SetCreature";
+
+            if (day < 0)
+            {
+                ExtraEditMod.m_debuglog += "\n use Default";
+                SetCreatureDefault(day, cgm);
+                return;
+            }
+            
             var sefiraEnum = m_dayToSefiraEnumDic[day];
             KeyValuePair<SefiraEnum, int> kv = new KeyValuePair<SefiraEnum, int>(sefiraEnum, day%5+1);
             if (m_creatureOlderDic.ContainsKey(kv))
