@@ -14,7 +14,7 @@ namespace ExtraEditMod
         /// <summary>
         /// セーブデータのバージョン
         /// </summary>
-        public const string m_saveDataVersion = "0.0.1";
+        public const string m_saveDataVersion = "0.0.2";
 
         /// <summary>
         /// セーブデーターの保存名
@@ -30,6 +30,11 @@ namespace ExtraEditMod
         /// LOBを追加できるか？
         /// </summary>
         public bool m_addMob = true;
+
+        /// <summary>
+        /// エネルギーを追加できるか？
+        /// </summary>
+        public bool m_addEnergy = false;
 
         /// <summary>
         /// アブノーマリティのデータ配列

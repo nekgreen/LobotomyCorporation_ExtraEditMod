@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
-using UnityEngine;
 using System.IO;
 using CreatureGenerate;
 using UnityEngine.SceneManagement; // コレ重要
 using System.Text;
+using UnityEngine;
 
 namespace ExtraEditMod
 {
@@ -22,6 +22,11 @@ namespace ExtraEditMod
         /// Lobを追加する機能
         /// </summary>
         AddLob m_addLob = new AddLob();
+
+        /// <summary>
+        /// エネルギー追加
+        /// </summary>
+        AddEnergy m_addEnergy = new AddEnergy();
 
         /// <summary>
         /// オーダーを設定する機能
@@ -106,6 +111,10 @@ namespace ExtraEditMod
         /// </summary>
         public static string m_debuglog = "";
 
+        /// <summary>
+        /// デバッグログを表示するか？
+        /// </summary>
+        bool m_visibleDebugLog = false;
 
         #endregion
 
@@ -161,8 +170,10 @@ namespace ExtraEditMod
                 _instance.m_orderCreature.Init();
 
                 bool _enableAddLob;
-                _instance.m_editSetting.LoadSettings(out _enableAddLob, _instance.m_orderCreature);
+                bool _enableAddEnergy;
+                _instance.m_editSetting.LoadSettings(out _enableAddLob, out _enableAddEnergy, _instance.m_orderCreature);
                 AddLob.enableAddLob = _enableAddLob;
+                AddEnergy.enableAddEnergy = _enableAddEnergy;
 
                 //このmodが起動したシーンと現状のシーンを登録
                 _instance.modBootSceneName = SceneManager.GetActiveScene().name;
@@ -170,9 +181,9 @@ namespace ExtraEditMod
 
 
                 //modデバッグ用
-                //TextAsset textAsset = Resources.Load<TextAsset>("xml/CreatureGenInfo");
-                //m_debuglog += textAsset.text;
-                //m_debuglog += _instance.CreatureIdAndNameList();
+                TextAsset textAsset = Resources.Load<TextAsset>("xml/CreatureGenInfo");
+                m_debuglog += textAsset.text;
+                m_debuglog += _instance.CreatureIdAndNameList();
 
             }
         }
@@ -183,6 +194,18 @@ namespace ExtraEditMod
         void Update()
         {
             m_addLob.Update();
+            m_addEnergy.Update();
+            /*
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                OutputImageManager.OutputAbnormaltyImage();
+            }
+            */
+
+            if (Input.GetKeyDown(KeyCode.U) && isEnableGui)
+            {
+                m_visibleDebugLog = !m_visibleDebugLog;
+            }
             if (Input.GetKeyDown(KeyCode.M))
             {
                 isEnableGui = !isEnableGui;
@@ -208,7 +231,11 @@ namespace ExtraEditMod
         public string CreatureIdAndNameList()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var metaID in CreatureGenerateInfo.all)
+            long[] creatureList = new long[CreatureGenerateInfo.all.Length];
+            Array.Copy(CreatureGenerateInfo.all, creatureList, CreatureGenerateInfo.all.Length);
+            Array.Sort<long>(creatureList);
+
+            foreach (var metaID in creatureList)
             {
                 var typeInfo = CreatureTypeList.instance.GetData(metaID);
                 string list = "ID:" + metaID + " code:" + typeInfo.codeId + " name:" + typeInfo.name + "\n";
@@ -231,8 +258,11 @@ namespace ExtraEditMod
                 SubGUI();
             }
 
-            //modデバッグ用
-            //GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
+            if (m_visibleDebugLog)
+            {
+                //modデバッグ用
+                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
+            }
         }
 
         /// <summary>
@@ -244,7 +274,9 @@ namespace ExtraEditMod
             foreach (var key in CreatureGenerateInfo.all)
             {
                 var typeInfo = CreatureTypeList.instance.GetData(key);
-                string str = typeInfo.portraitSrc;
+                //string str = typeInfo.portraitSrc;
+
+                string str = typeInfo.portraitSrcForcely;
                 m_creatureSprite.Add(key, Resources.Load<Sprite>(str));
                 m_creatureName.Add(key, typeInfo.collectionName);
             }
@@ -282,7 +314,19 @@ namespace ExtraEditMod
             AddLob.enableAddLob = GUI.Toggle(new Rect(x, y, 230, 20), AddLob.enableAddLob, "Addition of LOB by pressing L key");
             if (enableAddLob != AddLob.enableAddLob)
             {
-                m_editSetting.SaveSettings(AddLob.enableAddLob, m_orderCreature);
+                SaveSettings();
+            }
+
+
+            y += UI_PARTS_HIGHT;
+
+            var enableAddEnergy = AddEnergy.enableAddEnergy;
+
+            //エネルギー追加機能
+            AddEnergy.enableAddEnergy = GUI.Toggle(new Rect(x, y, 230, 20), AddEnergy.enableAddEnergy, "Addition of Energy by pressing I key");
+            if (enableAddEnergy != AddEnergy.enableAddEnergy)
+            {
+                SaveSettings();
             }
 
 
@@ -380,11 +424,18 @@ namespace ExtraEditMod
                     {
                         m_orderCreature.SetRandomFromBaseKv(m_choiceKeyValue, m_choiceIndex);
                     }
-                    m_editSetting.SaveSettings(AddLob.enableAddLob, m_orderCreature);
+                    SaveSettings();
                 }
                 contensCount++;
             }
             GUI.EndScrollView();
+        }
+        /// <summary>
+        /// セッティングを保存する
+        /// </summary>
+        void SaveSettings()
+        {
+            m_editSetting.SaveSettings(AddLob.enableAddLob, AddEnergy.enableAddEnergy, m_orderCreature);
         }
     }
 }

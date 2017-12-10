@@ -6,7 +6,7 @@ namespace ExtraEditMod
 {
     public class OrderCreature
     {
-        public static int DAY_COUNT = 35;
+        public static int DAY_COUNT = 45;
 
         /// <summary>
         /// クリーチャーを選択できるか?
