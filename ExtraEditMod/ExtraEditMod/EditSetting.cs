@@ -24,10 +24,11 @@ namespace ExtraEditMod
         /// </summary>
         /// <param name="enableAddLob"></param>
         /// <param name="_orderCreature"></param>
-        public void LoadSettings(out bool enableAddLob , out bool enableAddEnergy, OrderCreature _orderCreature)
+        public void LoadSettings(out bool enableAddLob , out bool enableAddEnergy, out bool enableAlwayGetGift, OrderCreature _orderCreature)
         {
             enableAddLob = true;
             enableAddEnergy = false;
+            enableAlwayGetGift = false;
 
             string filePath = Application.persistentDataPath + "/" + EditSettingSaveData.m_saveDataName;
             string json = LoadSettingText(filePath);
@@ -36,6 +37,7 @@ namespace ExtraEditMod
             {
                 enableAddLob = saveData.m_addMob;
                 enableAddEnergy = saveData.m_addEnergy;
+                enableAlwayGetGift = saveData.m_alwayGetGift;
 
                 //アブノーマリティを設定する
                 for (int i = 0; i < saveData.m_abnormaltyDataArray.Length; i++)
@@ -68,12 +70,14 @@ namespace ExtraEditMod
         /// </summary>
         /// <param name="enableAddLob"></param>
         /// <param name="_orderCreature"></param>
-        public void SaveSettings(bool enableAddLob,bool enableAddEnergy ,OrderCreature _orderCreature)
+        public void SaveSettings(bool enableAddLob,bool enableAddEnergy ,bool enableAlwaysGetGift,OrderCreature _orderCreature)
         {
             EditSettingSaveData data = new EditSettingSaveData();
             data.m_varsion = EditSettingSaveData.m_saveDataVersion;
             data.m_addMob = enableAddLob;
             data.m_addEnergy = enableAddEnergy;
+            data.m_alwayGetGift = enableAlwaysGetGift;
+
             data.m_abnormaltyDataArray = new string[_orderCreature.m_creatureOlderDic.Count];
 
 

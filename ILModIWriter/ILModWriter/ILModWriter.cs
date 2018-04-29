@@ -29,8 +29,11 @@ namespace ILModWriter
             //自作modのDllのバージョンを追加する
             AddExtraEditModDllVersion(list);
 
-            //タイトルにmodを埋め込み扱えるようにする
-            AddInitForTitleScriptAwake(list);
+            /// イントロプレイヤーのAwake更新
+            AddInitForIntroPlayerAwake(list);
+
+            //ギフトを必ず手に入れる機能入れるためgetRandomしてる箇所を書き換える
+            CnangeFinishWorkSuccessfully(list);
 
             //CreatureGenerateModel::SetCreature を書き換え
             CnangeSetCreature(list);
@@ -56,7 +59,19 @@ namespace ILModWriter
             list.Insert(++baseIndex, @"}");
         }
 
+        /// <summary>
+        /// イントロプレイヤーのAwake更新
+        /// </summary>
+        void AddInitForIntroPlayerAwake(List<string> list)
+        {
+            string search = @"// end of method IntroPlayer::Awake";
+            int baseIndex = IndexOfForList(0, search, list);
 
+            int labelNum = GetLabelNumber(list[baseIndex - 1]);
+
+            list[baseIndex - 1] = GetLabel(labelNum) + @"call       void [ExtraEditMod]ExtraEditMod.ExtraEditMod::Init()";
+            list.Insert(baseIndex, GetLabel(labelNum + 5) + "ret");
+        }
         /// <summary>
         /// タイトルのAwake更新
         /// </summary>
@@ -71,6 +86,36 @@ namespace ILModWriter
             list.Insert(baseIndex, GetLabel(labelNum + 5) + "ret");
         }
 
+        /// <summary>
+        /// ギフトを必ず手に入れる機能入れるためgetRandomしてる箇所を書き換える
+        /// </summary>
+        /// <param name="list"></param>
+        void CnangeFinishWorkSuccessfully(List<string> list)
+        {
+            string search = @"// end of method UseSkill::FinishWorkSuccessfully";
+            int baseIndex = IndexOfForList(0, search, list);
+            var limitIndex = baseIndex;
+
+            int minus = -1;
+            while (list[baseIndex + minus].IndexOf(@"FinishWorkSuccessfully() cil managed") < 0)
+            {
+                --minus;
+            }
+            baseIndex = baseIndex + minus;
+            int index = 1;
+
+            while (baseIndex + index < limitIndex)
+            {
+                if (0 <= list[baseIndex + index].IndexOf(@"float32 [UnityEngine.CoreModule]UnityEngine.Random::get_value()"))
+                {
+                    int labelNum = GetLabelNumber(list[baseIndex + index]);
+                    list[baseIndex + index] = GetLabel(labelNum) + @"call       float32 [ExtraEditMod]ExtraEditMod.ExtraEditMod::GetRamdomeValueOrZeroByAlwaysGetGiftFlag()";
+                    break;
+                }
+                index++;
+            }
+
+        }
 
         /// <summary>
         /// CreatureGenerateModel::SetCreature を書き換え

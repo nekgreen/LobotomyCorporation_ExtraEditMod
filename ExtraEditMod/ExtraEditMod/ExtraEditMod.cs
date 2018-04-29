@@ -12,6 +12,13 @@ namespace ExtraEditMod
     public class ExtraEditMod : MonoBehaviour
     {
         /// <summary>
+        /// タイトルシーン
+        /// </summary>
+        const string NewTitleScene = "NewTitleScene";
+
+        const string AlterTitleScene = "AlterTitleScene";
+
+        /// <summary>
         /// インスタンス
         /// </summary>
         private static ExtraEditMod _instance;
@@ -101,10 +108,8 @@ namespace ExtraEditMod
         /// </summary>
         string currentSceneName = "";
 
-        /// <summary>
-        /// このModを起動したシーン
-        /// </summary>
-        string modBootSceneName = "";
+        bool isInitCretureList = false;
+
 
         /// <summary>
         /// ログを表示する
@@ -123,7 +128,7 @@ namespace ExtraEditMod
         public const int BOX_X = 20;
         public const int BOX_Y = 20;
         public const int BOX_WIDTH = 350;
-        public const int BOX_HEIGHT = 460;
+        public const int BOX_HEIGHT = 490;
         public const int BOX_IN_CONTENT_X = 25;
 
         public const int ADD_CONTENT_X = 5;
@@ -165,26 +170,24 @@ namespace ExtraEditMod
                 var go = new GameObject();
                 DontDestroyOnLoad(go);
                 _instance = go.AddComponent<ExtraEditMod>();
-                _instance.isEnableGui = true;
-                _instance.InitCreature();
-                _instance.m_orderCreature.Init();
+                _instance.isEnableGui = false;
 
                 bool _enableAddLob;
                 bool _enableAddEnergy;
-                _instance.m_editSetting.LoadSettings(out _enableAddLob, out _enableAddEnergy, _instance.m_orderCreature);
+                bool _enableAlwaysGetGift;
+                _instance.m_editSetting.LoadSettings(out _enableAddLob, out _enableAddEnergy,out _enableAlwaysGetGift, _instance.m_orderCreature);
                 AddLob.enableAddLob = _enableAddLob;
                 AddEnergy.enableAddEnergy = _enableAddEnergy;
-
+                AlwayGetGift.enableAlwayGetGift = _enableAlwaysGetGift;
                 //このmodが起動したシーンと現状のシーンを登録
-                _instance.modBootSceneName = SceneManager.GetActiveScene().name;
                 _instance.currentSceneName = SceneManager.GetActiveScene().name;
 
-
                 //modデバッグ用
+                /*
                 TextAsset textAsset = Resources.Load<TextAsset>("xml/CreatureGenInfo");
                 m_debuglog += textAsset.text;
                 m_debuglog += _instance.CreatureIdAndNameList();
-
+                */
             }
         }
 
@@ -216,9 +219,16 @@ namespace ExtraEditMod
             {
                 isEnableGui = false;
                 //このmodを起動したシーンなら表示とする
-                if (modBootSceneName == temp)
+                if (NewTitleScene == temp || AlterTitleScene == temp)
                 {
                     isEnableGui = true;
+                    if (!isInitCretureList)
+                    {
+                        isInitCretureList = true;
+                        _instance.InitCreature();
+                        _instance.m_orderCreature.Init();
+                    }
+
                 }
                 currentSceneName = temp;
             }
@@ -250,7 +260,7 @@ namespace ExtraEditMod
         /// </summary>
         void OnGUI()
         {
-            if (!isEnableGui) return;
+            if (!isEnableGui || !isInitCretureList) return;
             MainGUI();
 
             if (isDrawSubWindow)
@@ -275,10 +285,12 @@ namespace ExtraEditMod
             {
                 var typeInfo = CreatureTypeList.instance.GetData(key);
                 //string str = typeInfo.portraitSrc;
-
-                string str = typeInfo.portraitSrcForcely;
-                m_creatureSprite.Add(key, Resources.Load<Sprite>(str));
-                m_creatureName.Add(key, typeInfo.collectionName);
+                if (typeInfo != null)
+                {
+                    string str = typeInfo.portraitSrcForcely;
+                    m_creatureSprite.Add(key, Resources.Load<Sprite>(str));
+                    m_creatureName.Add(key, typeInfo.collectionName);
+                }
             }
             m_creatureSprite.Add(0, Resources.Load<Sprite>("Sprites/Unit/creature/NoData"));
             m_creatureName.Add(0, "Random");
@@ -292,6 +304,15 @@ namespace ExtraEditMod
         public static void SetCreature(object cgm)
         {
             _instance.m_orderCreature.SetCreature(cgm);
+        }
+
+        /// <summary>
+        /// ランダムの値か、ゼロかを取得する
+        /// </summary>
+        /// <returns></returns>
+        public static float GetRamdomeValueOrZeroByAlwaysGetGiftFlag()
+        {
+            return AlwayGetGift.GetRamdomeValueOrZero();
         }
 
         /// <summary>
@@ -317,7 +338,6 @@ namespace ExtraEditMod
                 SaveSettings();
             }
 
-
             y += UI_PARTS_HIGHT;
 
             var enableAddEnergy = AddEnergy.enableAddEnergy;
@@ -325,6 +345,17 @@ namespace ExtraEditMod
             //エネルギー追加機能
             AddEnergy.enableAddEnergy = GUI.Toggle(new Rect(x, y, 230, 20), AddEnergy.enableAddEnergy, "Addition of Energy by pressing I key");
             if (enableAddEnergy != AddEnergy.enableAddEnergy)
+            {
+                SaveSettings();
+            }
+
+            y += UI_PARTS_HIGHT;
+
+            var enableAlwayGetGift = AlwayGetGift.enableAlwayGetGift;
+
+            //エネルギー追加機能
+            AlwayGetGift.enableAlwayGetGift = GUI.Toggle(new Rect(x, y, 230, 20), AlwayGetGift.enableAlwayGetGift, "Alway Get Gift");
+            if (enableAlwayGetGift != AlwayGetGift.enableAlwayGetGift)
             {
                 SaveSettings();
             }
@@ -435,7 +466,7 @@ namespace ExtraEditMod
         /// </summary>
         void SaveSettings()
         {
-            m_editSetting.SaveSettings(AddLob.enableAddLob, AddEnergy.enableAddEnergy, m_orderCreature);
+            m_editSetting.SaveSettings(AddLob.enableAddLob, AddEnergy.enableAddEnergy,AlwayGetGift.enableAlwayGetGift , m_orderCreature);
         }
     }
 }
