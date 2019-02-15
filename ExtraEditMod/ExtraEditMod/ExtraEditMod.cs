@@ -11,12 +11,16 @@ namespace ExtraEditMod
 {
     public class ExtraEditMod : MonoBehaviour
     {
+        //AgentInfoWindow.currentWindow
+
         /// <summary>
         /// タイトルシーン
         /// </summary>
         const string NewTitleScene = "NewTitleScene";
 
         const string AlterTitleScene = "AlterTitleScene";
+
+        const string MainScene = "Main";
 
         /// <summary>
         /// インスタンス
@@ -36,14 +40,14 @@ namespace ExtraEditMod
         AddEnergy m_addEnergy = new AddEnergy();
 
         /// <summary>
-        /// オーダーを設定する機能
-        /// </summary>
-        OrderCreature m_orderCreature = new OrderCreature();
-
-        /// <summary>
         /// エディットの状態設定保存
         /// </summary>
         EditSetting m_editSetting = new EditSetting();
+
+        /// <summary>
+        /// そのエージェントが今日どれだけ経験値を稼いだか表示する
+        /// </summary>
+        MalkutNotes m_malkutNone = new MalkutNotes();
 
         /// <summary>
         /// 選択する
@@ -61,9 +65,20 @@ namespace ExtraEditMod
         int m_choiceDay;
 
         /// <summary>
+        /// セッティング
+        /// </summary>
+        EditSetting.SettingData m_settingData;
+
+        /// <summary>
         /// UIを表示するかどうか？
         /// </summary>
-        public bool isEnableGui { get; set; }
+        public bool isEnableModMenuGui { get; set; }
+
+
+        /// <summary>
+        /// マルクトレポートを表示するかどうか？
+        /// </summary>
+        public bool isEnableMalkuthNotesGUI { get; set; }
 
         /// <summary>
         /// サブウインドウ表示
@@ -128,7 +143,7 @@ namespace ExtraEditMod
         public const int BOX_X = 20;
         public const int BOX_Y = 20;
         public const int BOX_WIDTH = 350;
-        public const int BOX_HEIGHT = 490;
+        public const int BOX_HEIGHT = 510;
         public const int BOX_IN_CONTENT_X = 25;
 
         public const int ADD_CONTENT_X = 5;
@@ -170,15 +185,15 @@ namespace ExtraEditMod
                 var go = new GameObject();
                 DontDestroyOnLoad(go);
                 _instance = go.AddComponent<ExtraEditMod>();
-                _instance.isEnableGui = false;
+                _instance.isEnableModMenuGui = false;
 
-                bool _enableAddLob;
-                bool _enableAddEnergy;
-                bool _enableAlwaysGetGift;
-                _instance.m_editSetting.LoadSettings(out _enableAddLob, out _enableAddEnergy,out _enableAlwaysGetGift, _instance.m_orderCreature);
-                AddLob.enableAddLob = _enableAddLob;
-                AddEnergy.enableAddEnergy = _enableAddEnergy;
-                AlwayGetGift.enableAlwayGetGift = _enableAlwaysGetGift;
+
+                _instance.m_settingData = _instance.m_editSetting.LoadSettings();
+                AddLob.enableAddLob = _instance.m_settingData.enableAddLob;
+                AddEnergy.enableAddEnergy = _instance.m_settingData.enableAddEnergy;
+                AlwayGetGift.enableAlwayGetGift = _instance.m_settingData.enableAlwayGetGift;
+                MalkutNotes.enableMalkutNotes = _instance.m_settingData.enableMalkutNote;
+
                 //このmodが起動したシーンと現状のシーンを登録
                 _instance.currentSceneName = SceneManager.GetActiveScene().name;
 
@@ -205,30 +220,35 @@ namespace ExtraEditMod
             }
             */
 
-            if (Input.GetKeyDown(KeyCode.U) && isEnableGui)
+            if (Input.GetKeyDown(KeyCode.U) && isEnableModMenuGui)
             {
                 m_visibleDebugLog = !m_visibleDebugLog;
             }
             if (Input.GetKeyDown(KeyCode.M))
             {
-                isEnableGui = !isEnableGui;
+                isEnableModMenuGui = !isEnableModMenuGui;
             }
             //シーンが切り替わったとき非表示にする
             string temp = SceneManager.GetActiveScene().name;
             if (temp != currentSceneName)
             {
-                isEnableGui = false;
+                isEnableModMenuGui = false;
+                isEnableMalkuthNotesGUI = false;
                 //このmodを起動したシーンなら表示とする
                 if (NewTitleScene == temp || AlterTitleScene == temp)
                 {
-                    isEnableGui = true;
+                    isEnableModMenuGui = true;
                     if (!isInitCretureList)
                     {
                         isInitCretureList = true;
                         _instance.InitCreature();
-                        _instance.m_orderCreature.Init();
+                        _instance.m_settingData.orderCreature.Init();
                     }
 
+                }
+                else if (MainScene == temp)
+                {
+                    isEnableMalkuthNotesGUI = true;
                 }
                 currentSceneName = temp;
             }
@@ -253,6 +273,31 @@ namespace ExtraEditMod
             }
             return sb.ToString();
         }
+        void DebugLog()
+        {
+            if (m_visibleDebugLog)
+            {
+                //modデバッグ用
+                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
+            }
+        }
+
+        void ModMenu()
+        {
+            if (!isEnableModMenuGui || !isInitCretureList) return;
+            MainGUI();
+
+            if (isDrawSubWindow)
+            {
+                SubGUI();
+            }
+        }
+
+        void MalkuthNotesGUI()
+        {
+            if (!isEnableMalkuthNotesGUI) return;
+            m_malkutNone.OnGUI();
+        }
 
 
         /// <summary>
@@ -260,19 +305,12 @@ namespace ExtraEditMod
         /// </summary>
         void OnGUI()
         {
-            if (!isEnableGui || !isInitCretureList) return;
-            MainGUI();
+            DebugLog();
 
-            if (isDrawSubWindow)
-            {
-                SubGUI();
-            }
+            ModMenu();
 
-            if (m_visibleDebugLog)
-            {
-                //modデバッグ用
-                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
-            }
+            MalkuthNotesGUI();
+
         }
 
         /// <summary>
@@ -303,7 +341,7 @@ namespace ExtraEditMod
         /// <param name="cgm"></param>
         public static void SetCreature(object cgm)
         {
-            _instance.m_orderCreature.SetCreature(cgm);
+            _instance.m_settingData.orderCreature.SetCreature(cgm);
         }
 
         /// <summary>
@@ -360,6 +398,17 @@ namespace ExtraEditMod
                 SaveSettings();
             }
 
+            y += UI_PARTS_HIGHT;
+
+            var enableMalkutNone = MalkutNotes.enableMalkutNotes;
+
+            //経験値をいくつ取得しているか？
+            MalkutNotes.enableMalkutNotes = GUI.Toggle(new Rect(x, y, 230, 20), MalkutNotes.enableMalkutNotes, "Malkut Notes");
+            if (enableMalkutNone != MalkutNotes.enableMalkutNotes)
+            {
+                SaveSettings();
+            }
+
 
             y += UI_PARTS_HIGHT;
 
@@ -376,11 +425,11 @@ namespace ExtraEditMod
             //スクロールの中身
             for (int i = 0; i < OrderCreature.DAY_COUNT; i++)
             {
-                var sefira = m_orderCreature.m_dayToSefiraEnumDic[i];
+                var sefira = m_settingData.orderCreature.m_dayToSefiraEnumDic[i];
                 var level = (i % 5) + 1;
                 var key = new KeyValuePair<SefiraEnum, int>(sefira, level);
-                if (!m_orderCreature.m_creatureOlderDic.ContainsKey(key)) continue;
-                var creatureIds = m_orderCreature.m_creatureOlderDic[key];
+                if (!m_settingData.orderCreature.m_creatureOlderDic.ContainsKey(key)) continue;
+                var creatureIds = m_settingData.orderCreature.m_creatureOlderDic[key];
 
                 int index = 0;
                 bool breakFlag = false;
@@ -395,7 +444,7 @@ namespace ExtraEditMod
                         m_choiceKeyValue = key;
                         m_choiceIndex = index;
                         isDrawSubWindow = true;
-                        m_selectAbnormalityList = m_orderCreature.GetCreatureList();
+                        m_selectAbnormalityList = m_settingData.orderCreature.GetCreatureList();
                         subScrollViewVector = Vector2.zero;
 
                     }
@@ -448,12 +497,12 @@ namespace ExtraEditMod
                 string label = string.Format("{0}", creatureCode);
                 if (GUI.Button(new Rect(BUTTON_X, (contensCount * BUTTON_HEIGHT_INTARVAL), BUTTON_WIDTH, IMAGE_SIZE), label))
                 {
-                    var list = m_orderCreature.m_creatureOlderDic[m_choiceKeyValue];
+                    var list = m_settingData.orderCreature.m_creatureOlderDic[m_choiceKeyValue];
                     list[m_choiceIndex] = id;
                     isDrawSubWindow = false;
                     if (id == 0)
                     {
-                        m_orderCreature.SetRandomFromBaseKv(m_choiceKeyValue, m_choiceIndex);
+                        m_settingData.orderCreature.SetRandomFromBaseKv(m_choiceKeyValue, m_choiceIndex);
                     }
                     SaveSettings();
                 }
@@ -466,7 +515,12 @@ namespace ExtraEditMod
         /// </summary>
         void SaveSettings()
         {
-            m_editSetting.SaveSettings(AddLob.enableAddLob, AddEnergy.enableAddEnergy,AlwayGetGift.enableAlwayGetGift , m_orderCreature);
+            m_settingData.enableAddLob = AddLob.enableAddLob;
+            m_settingData.enableAddEnergy = AddEnergy.enableAddEnergy;
+            m_settingData.enableAlwayGetGift = AlwayGetGift.enableAlwayGetGift;
+            m_settingData.enableMalkutNote = MalkutNotes.enableMalkutNotes;
+
+            m_editSetting.SaveSettings(m_settingData);
         }
     }
 }

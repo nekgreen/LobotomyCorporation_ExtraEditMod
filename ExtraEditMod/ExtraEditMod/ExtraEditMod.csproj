@@ -199,6 +199,7 @@
     <Compile Include="EditSettingData.cs" />
     <Compile Include="ExtraEditMod.cs" />
     <Compile Include="AlwayGetGift.cs" />
+    <Compile Include="MalkutNotes.cs" />
     <Compile Include="OutputImageManager.cs" />
     <Compile Include="OrderCreature.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

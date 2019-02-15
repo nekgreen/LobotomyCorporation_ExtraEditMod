@@ -13,6 +13,15 @@ namespace ExtraEditMod
 {
     class EditSetting
     {
+        public class SettingData
+        {
+            public bool enableAddLob;
+            public bool enableAddEnergy;
+            public bool enableAlwayGetGift;
+            public bool enableMalkutNote;
+            public OrderCreature orderCreature;
+        }
+
         /// <summary>
         /// 例外時のメッセージ
         /// </summary>
@@ -24,21 +33,25 @@ namespace ExtraEditMod
         /// </summary>
         /// <param name="enableAddLob"></param>
         /// <param name="_orderCreature"></param>
-        public void LoadSettings(out bool enableAddLob , out bool enableAddEnergy, out bool enableAlwayGetGift, OrderCreature _orderCreature)
+        public SettingData LoadSettings()
         {
-            enableAddLob = true;
-            enableAddEnergy = false;
-            enableAlwayGetGift = false;
+            var settingData = new SettingData();
+            settingData.enableAddLob = true;
+            settingData.enableAddEnergy = false;
+            settingData.enableAlwayGetGift = false;
+            settingData.enableMalkutNote = true;
+            settingData.orderCreature = new OrderCreature();
 
             string filePath = Application.persistentDataPath + "/" + EditSettingSaveData.m_saveDataName;
             string json = LoadSettingText(filePath);
             EditSettingSaveData saveData = JsonUtility.FromJson<EditSettingSaveData>(json);
             if (saveData != null)
             {
-                enableAddLob = saveData.m_addMob;
-                enableAddEnergy = saveData.m_addEnergy;
-                enableAlwayGetGift = saveData.m_alwayGetGift;
-
+                settingData.enableAddLob = saveData.m_addMob;
+                settingData.enableAddEnergy = saveData.m_addEnergy;
+                settingData.enableAlwayGetGift = saveData.m_alwayGetGift;
+                settingData.enableMalkutNote = saveData.m_malkutNote;
+                
                 //アブノーマリティを設定する
                 for (int i = 0; i < saveData.m_abnormaltyDataArray.Length; i++)
                 {
@@ -57,11 +70,12 @@ namespace ExtraEditMod
                     {
                         creatureList.Add(0);
                     }
-    
-                    _orderCreature.SetOrder(new KeyValuePair<SefiraEnum, int>(sefila, level), creatureList);
+
+                    settingData.orderCreature.SetOrder(new KeyValuePair<SefiraEnum, int>(sefila, level), creatureList);
                 }
 
             }
+            return settingData;
         }
 
 
@@ -70,19 +84,20 @@ namespace ExtraEditMod
         /// </summary>
         /// <param name="enableAddLob"></param>
         /// <param name="_orderCreature"></param>
-        public void SaveSettings(bool enableAddLob,bool enableAddEnergy ,bool enableAlwaysGetGift,OrderCreature _orderCreature)
+        public void SaveSettings(SettingData settingData)
         {
             EditSettingSaveData data = new EditSettingSaveData();
             data.m_varsion = EditSettingSaveData.m_saveDataVersion;
-            data.m_addMob = enableAddLob;
-            data.m_addEnergy = enableAddEnergy;
-            data.m_alwayGetGift = enableAlwaysGetGift;
+            data.m_addMob = settingData.enableAddLob;
+            data.m_addEnergy = settingData.enableAddEnergy;
+            data.m_alwayGetGift = settingData.enableAlwayGetGift;
+            data.m_malkutNote = settingData.enableMalkutNote;
 
-            data.m_abnormaltyDataArray = new string[_orderCreature.m_creatureOlderDic.Count];
+            data.m_abnormaltyDataArray = new string[settingData.orderCreature.m_creatureOlderDic.Count];
 
 
             int count = 0;
-            foreach (var kv in _orderCreature.m_creatureOlderDic)
+            foreach (var kv in settingData.orderCreature.m_creatureOlderDic)
             {
                 string abnormalty = "" + (int)(kv.Key.Key) + ","+ kv.Key.Value+",";
 

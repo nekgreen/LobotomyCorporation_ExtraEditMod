@@ -14,7 +14,7 @@ namespace ExtraEditMod
         /// <summary>
         /// セーブデータのバージョン
         /// </summary>
-        public const string m_saveDataVersion = "0.0.3";
+        public const string m_saveDataVersion = "0.0.4";
 
         /// <summary>
         /// セーブデーターの保存名
@@ -40,6 +40,12 @@ namespace ExtraEditMod
         /// 必ずギフトを手に入れられるか？
         /// </summary>
         public bool m_alwayGetGift = false;
+
+        /// <summary>
+        /// 今日どれだけ経験値を稼いだか？
+        /// </summary>
+        public bool m_malkutNote = true;
+        
         /// <summary>
         /// アブノーマリティのデータ配列
         /// </summary>
