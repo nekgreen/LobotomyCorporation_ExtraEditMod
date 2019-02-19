@@ -6,6 +6,7 @@ using CreatureGenerate;
 using UnityEngine.SceneManagement; // コレ重要
 using System.Text;
 using UnityEngine;
+using CommandWindow;
 
 namespace ExtraEditMod
 {
@@ -160,6 +161,8 @@ namespace ExtraEditMod
         public const int UI_MARGIN = 20;
         #endregion
 
+
+
         /// <summary>
         /// インスタンス
         /// </summary>
@@ -205,6 +208,12 @@ namespace ExtraEditMod
                 */
             }
         }
+        public GameObject[] FindRootObject(Transform transform)
+        {
+            return Array.FindAll(GameObject.FindObjectsOfType<GameObject>(), (item) => item.transform.parent == null);
+        }
+
+        Dictionary<GameObject, bool> m_tempGameObjectDic = new Dictionary<GameObject, bool>();
 
         /// <summary>
         /// 更新ボタン
@@ -220,10 +229,55 @@ namespace ExtraEditMod
             }
             */
 
-            if (Input.GetKeyDown(KeyCode.U) && isEnableModMenuGui)
+            if (Input.GetKeyDown(KeyCode.U))
             {
                 m_visibleDebugLog = !m_visibleDebugLog;
+                m_debuglog = "";
+
             }
+
+            //var window = CommandWindow.CommandWindow.CurrentWindow;
+
+            //if (window != null)
+            //{
+            //    m_debuglog = "window enable!\n";
+            //    m_debuglog += "CurrentWindowType:" + window.CurrentWindowType.ToString() + "\n";
+            //    m_debuglog += window.CurrentTarget != null ? "CurrentTarget:" + window.CurrentTarget.ToString() + "\n" : "CurrentTarget is null\n";
+            //    m_debuglog += window.CurrentSkill != null ? "CurrentSkill:" + window.CurrentSkill.ToString() + "\n" : "CurrentSkill is null\n";
+            //}
+            //else
+            //{
+            //    m_debuglog = "CurrentWindow is null";
+            //}
+
+            /*
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                m_visibleDebugLog = true;
+
+                m_debuglog = "";
+
+                var list = FindRootObject(this.transform);
+
+                StringBuilder sb = new StringBuilder();
+
+                HashSet<string> monoList = new HashSet<string>();
+
+                foreach (var go in list)
+                {
+                    SearchMonoBehaviour(monoList, m_tempGameObjectDic,go);
+                }
+
+                foreach (var name in monoList)
+                {
+                    sb.Append(name);
+                    sb.Append("\n");
+                }
+
+                m_debuglog = "gameObjectCount:"+ monoList.Count+ "\n"+ sb.ToString();
+            }
+            */
+
             if (Input.GetKeyDown(KeyCode.M))
             {
                 isEnableModMenuGui = !isEnableModMenuGui;
@@ -255,6 +309,132 @@ namespace ExtraEditMod
         }
 
         /// <summary>
+        /// コンポーネントを取得する
+        /// </summary>
+        /// <param name="gameObjectName"></param>
+        /// <param name="go"></param>
+        /// <param name="tagCount"></param>
+        void SearchMonoBehaviour(HashSet<string> monoList, Dictionary<GameObject,bool> activeDic,GameObject go)
+        {
+
+            if (activeDic.ContainsKey(go))
+            {
+                if (go.activeInHierarchy != activeDic[go])
+                {
+                    MonoBehaviour[] monoBehaviours = go.GetComponents<MonoBehaviour>();
+                    foreach (var monoBehaviour in monoBehaviours)
+                    {
+                        var name = monoBehaviour.GetType().Name;
+
+                        if (!monoList.Contains(name))
+                        {
+                            monoList.Add(name);
+                        }
+                    }
+
+                   // monoList.Add(go.name + " active:"+ go.activeInHierarchy);
+                   // activeDic[go] = go.activeInHierarchy;
+                }
+
+            }
+            else
+            {
+                activeDic.Add(go, go.activeInHierarchy);
+            }
+
+            //子供を取得
+
+            foreach (Transform child in go.transform)
+            {
+                SearchMonoBehaviour(monoList, activeDic, child.gameObject);
+            }
+        }
+
+
+
+        ///// <summary>
+        ///// コンポーネントを取得する
+        ///// </summary>
+        ///// <param name="gameObjectName"></param>
+        ///// <param name="go"></param>
+        ///// <param name="tagCount"></param>
+        //void SearchMonoBehaviour(HashSet<string> monoList, GameObject go)
+        //{
+        //    MonoBehaviour[] monoBehaviours = go.GetComponents<MonoBehaviour>();
+        //    foreach (var monoBehaviour in monoBehaviours)
+        //    {
+        //        var name = monoBehaviour.GetType().Name;
+
+        //        if (!monoList.Contains(name))
+        //        {
+        //            monoList.Add(name);
+        //        }
+        //    }
+        //    //子供を取得
+
+        //    foreach (Transform child in go.transform)
+        //    {
+        //        SearchMonoBehaviour(monoList, child.gameObject);
+        //    }
+        //}
+
+        ///// <summary>
+        ///// コンポーネントを取得する
+        ///// </summary>
+        ///// <param name="gameObjectName"></param>
+        ///// <param name="go"></param>
+        ///// <param name="tagCount"></param>
+        //int SearchMonoBehaviour(StringBuilder gameObjectName,StringBuilder mono, GameObject go,int tagCount,int index)
+        //{
+        //    AddTag(gameObjectName, tagCount);
+
+        //    gameObjectName.Append("■"+ index.ToString()+":"+go.name);
+        //    gameObjectName.Append("\n");
+
+        //    index++;
+        //    tagCount++;
+        //    ////自分に登録されてるコンポーネントを表示する
+        //    AddMonoBehaviourData(go, index, mono);
+
+        //    //子供を取得
+
+        //    foreach (Transform child in go.transform)
+        //    {
+        //        index = SearchMonoBehaviour(gameObjectName, mono,child.gameObject, tagCount,index);
+        //    }
+        //    return index;
+        //}
+
+        //void AddMonoBehaviourData(GameObject go, int index, StringBuilder mono)
+        //{
+        //    MonoBehaviour[] monoBehaviours = go.GetComponents<MonoBehaviour>();
+        //    if (monoBehaviours != null && 0 < monoBehaviours.Length)
+        //    {
+        //        mono.Append("■" + index.ToString() + ":" + go.name);
+        //        mono.Append("\n");
+        //    }
+
+        //    foreach (var monoBehaviour in monoBehaviours)
+        //    {
+        //        mono.Append("〇" + monoBehaviour.GetType().Name);
+        //        mono.Append("\n");
+        //    }
+        //}
+
+
+        ////タグを設定
+        //void AddTag(StringBuilder sb, int tagCount)
+        //{
+        //    for (int i = 0; i < tagCount; i++)
+        //    {
+        //        sb.Append("\t");
+        //    }
+        //}
+
+
+
+
+        /// <summary>
         /// ID一覧を取得
         /// </summary>
         /// <returns></returns>
@@ -278,7 +458,7 @@ namespace ExtraEditMod
             if (m_visibleDebugLog)
             {
                 //modデバッグ用
-                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 10), Screen.height - 20), m_debuglog);
+                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 600), Screen.height - 20), m_debuglog);
             }
         }
 
@@ -297,6 +477,108 @@ namespace ExtraEditMod
         {
             if (!isEnableMalkuthNotesGUI) return;
             m_malkutNone.OnGUI();
+        }
+
+        public static void OnClick(AgentModel actor)
+        {
+            CommandWindow.CommandWindow CurrentWindow = CommandWindow.CommandWindow.CurrentWindow;
+
+            if (CurrentWindow != null && CurrentWindow.CurrentTarget != null && CurrentWindow.CurrentSkill != null && actor != null)
+            {
+                m_debuglog += CurrentWindow.CurrentTarget.GetUnitName() + "に"+CurrentWindow.CurrentSkill.name + "を"+actor.name+"に割り当てた\n";
+            }
+
+
+            _instance.BaseOnClick(actor);
+
+        }
+
+        void BaseOnClick(AgentModel actor)
+        {
+            CommandWindow.CommandWindow CurrentWindow = CommandWindow.CommandWindow.CurrentWindow;
+
+            if (actor == null || CurrentWindow == null)
+            {
+                return;
+            }
+
+
+            if (CurrentWindow.CurrentWindowType == CommandType.Management)
+            {
+                if (!actor.CheckWorkCommand())
+                {
+                    CurrentWindow.SetAgentList(CurrentWindow.CurrentWindowType, CurrentWindow.CurrentSefira);
+                    return;
+                }
+                CreatureModel currentTarget = CurrentWindow.CurrentTarget as CreatureModel;
+                if (actor.GetState() == AgentAIState.MANAGE)
+                {
+                    if (currentTarget == actor.target)
+                    {
+                        if (actor.currentSkill == null)
+                        {
+                            actor.ForcelyCancelWork();
+                        }
+                        return;
+                    }
+                    if (actor.currentSkill != null)
+                    {
+                        actor.StopAction();
+                    }
+                    else
+                    {
+                        actor.ForcelyCancelWork();
+                    }
+                }
+                SkillTypeInfo data = SkillTypeList.instance.GetData(CurrentWindow.SelectedWork);
+                actor.ManageCreature(currentTarget, data, CurrentWindow.GetWorkSprite((RwbpType)((int)CurrentWindow.SelectedWork)));
+                actor.counterAttackEnabled = false;
+                currentTarget.Unit.room.OnWorkAllocated(actor);
+                currentTarget.script.OnWorkAllocated(data, actor);
+                AngelaConversation.instance.MakeMessage(AngelaMessageState.MANAGE_START, new object[] { actor, data, CurrentWindow.CurrentTarget as CreatureModel });
+                CurrentWindow.CloseWindow();
+            }
+            else if (CurrentWindow.CurrentWindowType != CommandType.KitCreature)
+            {
+                if (actor.GetState() == AgentAIState.SUPPRESS_CREATURE && actor.target == CurrentWindow.CurrentTarget)
+                {
+                    actor.ForcelyCancelSuppress();
+                    return;
+                }
+                if (actor.GetState() == AgentAIState.SUPPRESS_WORKER && actor.targetWorker == CurrentWindow.CurrentTarget)
+                {
+                    actor.ForcelyCancelSuppress();
+                    return;
+                }
+                actor.Suppress(CurrentWindow.CurrentTarget, false);
+            }
+            else
+            {
+                CreatureModel creatureModel = CurrentWindow.CurrentTarget as CreatureModel;
+                if (actor.GetState() == AgentAIState.MANAGE)
+                {
+                    if (creatureModel == actor.target)
+                    {
+                        if (actor.currentSkill == null)
+                        {
+                            actor.ForcelyCancelWork();
+                        }
+                        return;
+                    }
+                    if (actor.currentSkill != null)
+                    {
+                        actor.StopAction();
+                    }
+                    else
+                    {
+                        actor.ForcelyCancelWork();
+                    }
+                }
+                actor.ManageKitCreature(creatureModel);
+                actor.counterAttackEnabled = false;
+                creatureModel.Unit.room.OnWorkAllocated(actor);
+                CurrentWindow.CloseWindow();
+            }
         }
 
 
