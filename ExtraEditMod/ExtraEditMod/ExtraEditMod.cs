@@ -51,6 +51,11 @@ namespace ExtraEditMod
         MalkutNotes m_malkutNone = new MalkutNotes();
 
         /// <summary>
+        /// エージェントのタスクを管理する
+        /// </summary>
+        TaskManager m_taskManager = new TaskManager();
+
+        /// <summary>
         /// 選択する
         /// </summary>
         KeyValuePair<SefiraEnum, int> m_choiceKeyValue;
@@ -80,6 +85,11 @@ namespace ExtraEditMod
         /// マルクトレポートを表示するかどうか？
         /// </summary>
         public bool isEnableMalkuthNotesGUI { get; set; }
+
+        /// <summary>
+        /// タスクマネージャーを表示するか？
+        /// </summary>
+        public bool isEnableTaskManager { get; set; }
 
         /// <summary>
         /// サブウインドウ表示
@@ -196,6 +206,7 @@ namespace ExtraEditMod
                 AddEnergy.enableAddEnergy = _instance.m_settingData.enableAddEnergy;
                 AlwayGetGift.enableAlwayGetGift = _instance.m_settingData.enableAlwayGetGift;
                 MalkutNotes.enableMalkutNotes = _instance.m_settingData.enableMalkutNote;
+                TaskManager.enableTaskManager = _instance.m_settingData.enableTaskManager;
 
                 //このmodが起動したシーンと現状のシーンを登録
                 _instance.currentSceneName = SceneManager.GetActiveScene().name;
@@ -222,61 +233,38 @@ namespace ExtraEditMod
         {
             m_addLob.Update();
             m_addEnergy.Update();
-            /*
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                OutputImageManager.OutputAbnormaltyImage();
-            }
-            */
+            m_taskManager.Update();
 
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                m_visibleDebugLog = !m_visibleDebugLog;
-                m_debuglog = "";
 
-            }
 
-            //var window = CommandWindow.CommandWindow.CurrentWindow;
 
-            //if (window != null)
-            //{
-            //    m_debuglog = "window enable!\n";
-            //    m_debuglog += "CurrentWindowType:" + window.CurrentWindowType.ToString() + "\n";
-            //    m_debuglog += window.CurrentTarget != null ? "CurrentTarget:" + window.CurrentTarget.ToString() + "\n" : "CurrentTarget is null\n";
-            //    m_debuglog += window.CurrentSkill != null ? "CurrentSkill:" + window.CurrentSkill.ToString() + "\n" : "CurrentSkill is null\n";
-            //}
-            //else
-            //{
-            //    m_debuglog = "CurrentWindow is null";
-            //}
-
-            /*
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                m_visibleDebugLog = true;
-
-                m_debuglog = "";
-
-                var list = FindRootObject(this.transform);
-
-                StringBuilder sb = new StringBuilder();
-
-                HashSet<string> monoList = new HashSet<string>();
-
-                foreach (var go in list)
+                /*
+                if (Input.GetKeyDown(KeyCode.O))
                 {
-                    SearchMonoBehaviour(monoList, m_tempGameObjectDic,go);
-                }
+                    m_visibleDebugLog = true;
 
-                foreach (var name in monoList)
-                {
-                    sb.Append(name);
-                    sb.Append("\n");
-                }
+                    m_debuglog = "";
 
-                m_debuglog = "gameObjectCount:"+ monoList.Count+ "\n"+ sb.ToString();
-            }
-            */
+                    var list = FindRootObject(this.transform);
+
+                    StringBuilder sb = new StringBuilder();
+
+                    HashSet<string> monoList = new HashSet<string>();
+
+                    foreach (var go in list)
+                    {
+                        SearchMonoBehaviour(monoList, m_tempGameObjectDic,go);
+                    }
+
+                    foreach (var name in monoList)
+                    {
+                        sb.Append(name);
+                        sb.Append("\n");
+                    }
+
+                    m_debuglog = "gameObjectCount:"+ monoList.Count+ "\n"+ sb.ToString();
+                }
+                */
 
             if (Input.GetKeyDown(KeyCode.M))
             {
@@ -458,8 +446,13 @@ namespace ExtraEditMod
             if (m_visibleDebugLog)
             {
                 //modデバッグ用
-                GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 600), Screen.height - 20), m_debuglog);
+                //GUI.TextField(new Rect(10, 10, Screen.width - (BOX_X + BOX_WIDTH + 600), Screen.height - 20), m_debuglog);
+
+
+                //GUI.TextField(new Rect(10, 300, 100, 50), m_taskManager.m_debugLog);
             }
+
+            //m_taskManager.m_debugLog = GUI.TextField(new Rect(10, 300, 100, 50), m_taskManager.m_debugLog);
         }
 
         void ModMenu()
@@ -479,13 +472,20 @@ namespace ExtraEditMod
             m_malkutNone.OnGUI();
         }
 
+        void TaskManagerGUI()
+        {
+           // if (!isEnableTaskManager) return;
+            m_taskManager.OnGUI();
+        }
+
         public static void OnClick(AgentModel actor)
         {
             CommandWindow.CommandWindow CurrentWindow = CommandWindow.CommandWindow.CurrentWindow;
 
-            if (CurrentWindow != null && CurrentWindow.CurrentTarget != null && CurrentWindow.CurrentSkill != null && actor != null)
+            if (CurrentWindow != null && CurrentWindow.CurrentTarget != null && CurrentWindow.CurrentSkill != null && actor != null && CurrentWindow.CurrentWindowType == CommandType.Management)
             {
-                m_debuglog += CurrentWindow.CurrentTarget.GetUnitName() + "に"+CurrentWindow.CurrentSkill.name + "を"+actor.name+"に割り当てた\n";
+                _instance.m_taskManager.AddWorkLog(new WorkLog(_instance.m_taskManager.recodeElapsed, CurrentWindow.SelectedWork, CurrentWindow.CurrentTarget, actor));
+               // m_debuglog += CurrentWindow.CurrentTarget.GetUnitName() + "に"+CurrentWindow.CurrentSkill.name + "を"+actor.name+"に割り当てた\n";
             }
 
 
@@ -593,6 +593,8 @@ namespace ExtraEditMod
 
             MalkuthNotesGUI();
 
+            TaskManagerGUI();
+
         }
 
         /// <summary>
@@ -687,6 +689,17 @@ namespace ExtraEditMod
             //経験値をいくつ取得しているか？
             MalkutNotes.enableMalkutNotes = GUI.Toggle(new Rect(x, y, 230, 20), MalkutNotes.enableMalkutNotes, "Malkut Notes");
             if (enableMalkutNone != MalkutNotes.enableMalkutNotes)
+            {
+                SaveSettings();
+            }
+
+            y += UI_PARTS_HIGHT;
+
+            var enableTaskManager = TaskManager.enableTaskManager;
+
+            //経験値をいくつ取得しているか？
+            TaskManager.enableTaskManager = GUI.Toggle(new Rect(x, y, 230, 20), TaskManager.enableTaskManager, "Task Manager");
+            if (enableTaskManager != TaskManager.enableTaskManager)
             {
                 SaveSettings();
             }
@@ -801,6 +814,7 @@ namespace ExtraEditMod
             m_settingData.enableAddEnergy = AddEnergy.enableAddEnergy;
             m_settingData.enableAlwayGetGift = AlwayGetGift.enableAlwayGetGift;
             m_settingData.enableMalkutNote = MalkutNotes.enableMalkutNotes;
+            m_settingData.enableTaskManager = TaskManager.enableTaskManager;
 
             m_editSetting.SaveSettings(m_settingData);
         }

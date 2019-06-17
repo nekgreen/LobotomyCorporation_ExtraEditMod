@@ -38,6 +38,9 @@ namespace ILModWriter
             //CreatureGenerateModel::SetCreature を書き換え
             CnangeSetCreature(list);
 
+            //CommandWindow::OnClick を書き換え
+            CnangeCommandWindowOnClick(list);
+
             //現状のStringのリストをファイルとして書き出す
             IlListWriter(@"_Assembly-CSharp.il", list);
         }
@@ -141,6 +144,29 @@ namespace ILModWriter
             list.Insert(baseIndex + 4, @"    IL_0006:  ret");
         }
 
+        /// <summary>
+        /// CommandWindow::OnClick を書き換え
+        /// </summary>
+        /// <param name="list"></param>
+        void CnangeCommandWindowOnClick(List<string> list)
+        {
+            string search = @"// end of method CommandWindow::OnClick";
+            int baseIndex = IndexOfForList(0, search, list);
+            int minus = -1;
+            while (list[baseIndex + minus].IndexOf(@"OnClick(class AgentModel actor) cil managed") < 0)
+            {
+                --minus;
+            }
+            baseIndex = baseIndex + minus;
+            while (list[baseIndex + 2].IndexOf(@"// end of method CommandWindow::OnClick") < 0)
+            {
+                list.RemoveAt(baseIndex + 2);
+            }
+
+            list.Insert(baseIndex + 2, @"    IL_0000: ldarg.1");
+            list.Insert(baseIndex + 3, @"    IL_0001: call void [ExtraEditMod]ExtraEditMod.ExtraEditMod::OnClick(class AgentModel)");
+            list.Insert(baseIndex + 4, @"    IL_0006:  ret");
+        }
 
         /// <summary>
         /// ラベルの№取得
@@ -198,6 +224,28 @@ namespace ILModWriter
 
             return -1;
         }
+
+
+        /// <summary>
+        /// 特定の文字列が完全一致する行を探す
+        /// </summary>
+        /// <param name="startIndex"></param>
+        /// <param name="search"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        int EqualStringForList(int startIndex, string search, List<string> target)
+        {
+            for (int i = startIndex; i < target.Count; i++)
+            {
+                if (target[i] == search)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
 
 
         /// <summary>

@@ -19,6 +19,7 @@ namespace ExtraEditMod
             public bool enableAddEnergy;
             public bool enableAlwayGetGift;
             public bool enableMalkutNote;
+            public bool enableTaskManager;
             public OrderCreature orderCreature;
         }
 
@@ -40,6 +41,7 @@ namespace ExtraEditMod
             settingData.enableAddEnergy = false;
             settingData.enableAlwayGetGift = false;
             settingData.enableMalkutNote = true;
+            settingData.enableTaskManager = true;
             settingData.orderCreature = new OrderCreature();
 
             string filePath = Application.persistentDataPath + "/" + EditSettingSaveData.m_saveDataName;
@@ -51,6 +53,7 @@ namespace ExtraEditMod
                 settingData.enableAddEnergy = saveData.m_addEnergy;
                 settingData.enableAlwayGetGift = saveData.m_alwayGetGift;
                 settingData.enableMalkutNote = saveData.m_malkutNote;
+                settingData.enableTaskManager = saveData.m_taskManager;
                 
                 //アブノーマリティを設定する
                 for (int i = 0; i < saveData.m_abnormaltyDataArray.Length; i++)
@@ -92,7 +95,7 @@ namespace ExtraEditMod
             data.m_addEnergy = settingData.enableAddEnergy;
             data.m_alwayGetGift = settingData.enableAlwayGetGift;
             data.m_malkutNote = settingData.enableMalkutNote;
-
+            data.m_taskManager = settingData.enableTaskManager;
             data.m_abnormaltyDataArray = new string[settingData.orderCreature.m_creatureOlderDic.Count];
 
 

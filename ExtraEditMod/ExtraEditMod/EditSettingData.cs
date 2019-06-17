@@ -45,6 +45,11 @@ namespace ExtraEditMod
         /// 今日どれだけ経験値を稼いだか？
         /// </summary>
         public bool m_malkutNote = true;
+
+        /// <summary>
+        /// タスクマネージャーが有効か？
+        /// </summary>
+        public bool m_taskManager = true;
         
         /// <summary>
         /// アブノーマリティのデータ配列
